@@ -484,7 +484,18 @@ defmodule OpenApiSpex.Schema do
   """
   @spec validate(Schema.t() | Reference.t(), any, %{String.t() => Schema.t() | Reference.t()}) ::
           :ok | {:error, String.t()}
-  def validate(schema, val, schemas), do: validate(schema, val, "#", schemas)
+  def validate(schema, val, schemas) do
+    # TODO: Remove comment
+    # IO.inspect("validate root entrypoint -------")
+    # TODO: Remove comment
+    # IO.inspect(schema, label: "schema")
+    # TODO: Remove comment
+    # IO.inspect(val, label: "val")
+    # TODO: Remove comment
+    # IO.inspect(schemas, label: "schemas")
+
+    validate(schema, val, "#", schemas)
+  end
 
   @spec validate(Schema.t() | Reference.t(), any, String.t(), %{
           String.t() => Schema.t() | Reference.t()
@@ -547,10 +558,13 @@ defmodule OpenApiSpex.Schema do
   end
 
   def validate(schema = %Schema{type: :integer}, value, path, _schemas) when is_integer(value) do
+    # TODO: Remove comment
+    # IO.inspect("validating integer -------")
     validate_number_types(schema, value, path)
   end
 
   def validate(schema = %Schema{type: :number}, value, path, _schemas) when is_number(value) do
+    # IO.inspect("validating integer -------")
     validate_number_types(schema, value, path)
   end
 
@@ -591,6 +605,8 @@ defmodule OpenApiSpex.Schema do
 
   def validate(schema = %Schema{type: :object}, value = %{}, path, schemas) do
     schema = %{schema | properties: schema.properties || %{}, required: schema.required || []}
+    # TODO: Remove comment
+    # IO.inspect("validating schema properties -------")
 
     with :ok <- validate_required_properties(schema, value, path),
          :ok <- validate_max_properties(schema, value, path),
@@ -614,6 +630,13 @@ defmodule OpenApiSpex.Schema do
 
   def validate(%Schema{type: expected_type}, value, path, _schemas)
       when not is_nil(expected_type) do
+    Process.info(self(), :current_stacktrace)
+    # TODO: Remove comment
+    # IO.inspect(expected_type, label: "expected_type")
+    # TODO: Remove comment
+    # IO.inspect(value, label: "value")
+    # TODO: Remove comment
+    # IO.inspect(path, label: "path")
     {:error, "#{path}: invalid type #{term_type(value)} where #{expected_type} expected"}
   end
 
@@ -805,8 +828,17 @@ defmodule OpenApiSpex.Schema do
           String.t() => Schema.t() | Reference.t()
         }) :: :ok | {:error, String.t()}
   defp validate_object_properties(properties = %{}, required, value = %{}, path, schemas = %{}) do
+    # TODO: Remove comment
+    # IO.inspect("validate_object_properties -------")
+
     properties
-    |> Enum.filter(fn {name, _schema} -> Map.has_key?(value, name) end)
+    |> Enum.filter(fn {name, _schema} ->
+      # TODO: Remove comment
+      # IO.inspect(Atom.to_string(name), label: "name")
+      # TODO: Remove comment
+      # IO.inspect(value, label: "value")
+      Map.has_key?(value, Atom.to_string(name))
+    end)
     |> validate_object_properties(required, value, path, schemas)
   end
 
@@ -819,9 +851,19 @@ defmodule OpenApiSpex.Schema do
          path,
          schemas = %{}
        ) do
+    # TODO: Remove comment
+    # IO.inspect("validate_object_properties -------")
+    # TODO: Remove comment
+    # IO.inspect(required, label: "required")
+    # TODO: Remove comment
+    # IO.inspect(name, label: "name")
     property_required = MapSet.member?(required, name)
-    property_value = Map.get(value, name)
+    property_value = Map.get(value, Atom.to_string(name))
     property_path = "#{path}/#{name}"
+
+    # IO.inspect(property_required, label: "property_required")
+    # IO.inspect(property_value, label: "property_value")
+    # IO.inspect(property_path, label: "property_path")
 
     with :ok <-
            validate_object_property(
@@ -839,6 +881,8 @@ defmodule OpenApiSpex.Schema do
   defp validate_object_property(_schema, false, nil, _path, _schemas), do: :ok
 
   defp validate_object_property(schema, _required, value, path, schemas) do
+    # TODO: Remove comment
+    # IO.inspect("validate_object_property -------")
     validate(schema, value, path, schemas)
   end
 

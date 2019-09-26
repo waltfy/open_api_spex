@@ -164,6 +164,14 @@ defmodule OpenApiSpex do
   end
 
   @doc """
+  TODO: Add documentation and example usage here
+  """
+  def import(map) do
+    OpenApiSpex.Decoding.decode(map)
+    # Validate after importing/import_and_validate
+  end
+
+  @doc """
   Validate the compiled schema's properties to ensure the schema is not improperly
   defined. Only errors which would cause a given schema to _always_ fail should be
   raised here.
