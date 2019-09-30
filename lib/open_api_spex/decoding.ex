@@ -69,6 +69,20 @@ defmodule OpenApiSpex.Decoding do
     |> to_struct(:externalDocs, ExternalDocumentation)
   end
 
+  def convert_key_to_atom_if_present(map, key) do
+    if Map.has_key?(map, key) do
+      Map.update!(map, key, fn
+        nil ->
+          nil
+
+        v ->
+          String.to_atom(v)
+      end)
+    else
+      map
+    end
+  end
+
   def to_struct(nil, _mod), do: nil
 
   def to_struct(map, Tag) when is_map(map) do
@@ -98,10 +112,19 @@ defmodule OpenApiSpex.Decoding do
     |> to_struct(:callbacks, Callback)
   end
 
+  def to_struct(%{"$ref": _} = map, Schema) when is_map(map) do
+    struct(Reference, map)
+  end
+
   def to_struct(map, Schema) do
     Schema
     |> struct(map)
-    |> Map.update!(:type, &String.to_atom/1)
+    |> convert_key_to_atom_if_present(:type)
+    |> to_struct(:allOf, Schemas)
+    |> to_struct(:oneOf, Schemas)
+    |> to_struct(:anyOf, Schemas)
+    |> to_struct(:not, Schema)
+    |> to_struct(:items, Schema)
   end
 
   def to_struct(map, InlineSchema) do
@@ -110,7 +133,15 @@ defmodule OpenApiSpex.Decoding do
     |> to_struct(:externalDocs, ExternalDocumentation)
   end
 
-  def to_struct(map, Schemas) do
+  def to_struct(list, Schemas) when is_list(list) do
+    list
+    |> Enum.map(fn
+      %{"$ref": _} = v -> struct(Reference, v)
+      v -> to_struct(v, InlineSchema)
+    end)
+  end
+
+  def to_struct(map, Schemas) when is_map(map) do
     map
     |> Map.new(fn
       {k, %{"$ref": _} = v} ->
@@ -162,7 +193,6 @@ defmodule OpenApiSpex.Decoding do
   def to_struct(map, Operation) do
     Operation
     |> struct(map)
-    |> to_struct(:tags, Tag)
     |> to_struct(:externalDocs, ExternalDocumentation)
     |> to_struct(:responses, Response)
     |> to_struct(:parameters, Parameter)
@@ -194,17 +224,39 @@ defmodule OpenApiSpex.Decoding do
     |> to_struct(:content, MediaType)
   end
 
-  def to_struct(list, Parameter) do
+  def to_struct(list, Parameter) when is_list(list) do
     list
     |> Enum.map(fn
       %{"$ref": _} = param ->
         struct(Reference, param)
 
       param ->
-        struct(Parameter, param)
+        param
+        |> convert_key_to_atom_if_present(:in)
+        |> convert_key_to_atom_if_present(:name)
+        |> convert_key_to_atom_if_present(:style)
+        |> (fn x -> struct(Parameter, x) end).()
         |> to_struct(:examples, Example)
         |> to_struct(:content, MediaType)
         |> to_struct(:schema, Schema)
+    end)
+  end
+
+  def to_struct(map, Parameter) when is_map(map) do
+    map
+    |> Map.new(fn
+      {k, %{"$ref": _} = v} ->
+        {k, struct(Reference, v)}
+
+      {k, v} ->
+        res =
+          v
+          |> (fn x -> struct(Parameter, x) end).()
+          |> to_struct(:examples, Example)
+          |> to_struct(:content, MediaType)
+          |> to_struct(:schema, Schema)
+
+        {k, res}
     end)
   end
 
