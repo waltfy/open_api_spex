@@ -273,6 +273,9 @@ All JavaScript and CSS assets are sourced from cdnjs.cloudflare.com, rather than
   end
 ```
 
+## Importing an existing schema file
+TODO
+
 ## Validating and Casting Params
 
 OpenApiSpex can automatically validate requests before they reach the controller action function. Or if you prefer,
