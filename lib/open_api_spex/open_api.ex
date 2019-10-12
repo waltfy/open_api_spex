@@ -146,4 +146,12 @@ defmodule OpenApiSpex.OpenApi do
       end
     end
   end
+
+  @doc """
+  TOOD: Document this function
+  ## Example
+  """
+  def from_map(map) do
+    OpenApi.Map.decode(map)
+  end
 end
